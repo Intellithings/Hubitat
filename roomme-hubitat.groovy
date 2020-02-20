@@ -17,7 +17,6 @@
  *  ******************************************** http://intellithings.net/hubitat *********************************************
  *  ***************************************************************************************************************************
  */
-
 definition(
     name: "RoomMe",
     namespace: "Intellithings.net",
@@ -29,7 +28,7 @@ definition(
     iconX3Url: "https://roomme-icons.s3.amazonaws.com/app_icon_120x120.png",
     oauth: [displayName: "RoomMe REST API", displayLink: ""]
 )
-​
+
 mappings {
   path("/devices") {
     action: [
@@ -77,7 +76,8 @@ def initialize() {
 def listDevices() {
   def resp = []
   devices.each {
-  
+    log.debug "device: ${it.properties}"
+      
     def supportedAttributes = []
   it.supportedAttributes.each {
     supportedAttributes << it.name
@@ -159,31 +159,34 @@ def deviceGetAttributeValue() {
 def deviceCommand() {
   def device = getDeviceById(params.id)
   log.debug "device: ${device}"
+  log.debug "device supported attributes: ${device.supportedAttributes}"
+  log.debug "device supported commands: ${device.supportedCommands}"
 
+    
   def name = params.name
   
-  if (name == "setLightState") {
-    log.debug "dimmer: ${params.dimmer}"
-    log.debug "hue: ${params.hue}"
-    log.debug "saturation: ${params.saturation}"
-  
+  if (name == "setLightState") { 
   	def dimmer = params.dimmer
   	def hue = params.hue
   	def saturation = params.saturation
     
     if (dimmer != null) {
     	device.setLevel(dimmer.toInteger())
+        log.debug "device: ${device} Level was set to: ${params.saturation}%"
     }
     
     if (hue != null) {
     	device.setHue(hue.toInteger())
+        log.debug "device: ${device} hue was set to: ${params.saturation}%"
     }
      
-    if (device.hasCapability(saturation)) {
+    //log.debug "is saturation supoorted: ${device.hasCapability(saturation)}"    
+    //if (device.hasCapability(saturation)) {
         if (saturation != null) {
         	device.setSaturation(saturation.toInteger())
+            log.debug "device: ${device} saturation was set to: ${params.saturation}%"
         }      
-    }
+    //}
   } else if (name == "setTemperature") {
   	def temperature = params.temperature
     log.debug "temperature: ${params.temperature}"
