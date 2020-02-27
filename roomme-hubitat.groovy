@@ -30,198 +30,202 @@ definition(
 )
 
 mappings {
-  path("/devices") {
-    action: [
-        GET: "listDevices"
-    ]
-  }
-  path("/device/:id") {
-    action: [
-        GET: "deviceDetails"
-    ]
-  }
-  path("/device/:id/attribute/:name") {
-    action: [
-        GET: "deviceGetAttributeValue"
-    ]
-  }
-  path("/device/:id/command/:name") {
-    action: [
-        POST: "deviceCommand"
-    ]
-  }
+    path("/devices") {
+        action: [
+            GET: "listDevices"
+        ]
+    }
+    path("/device/:id") {
+        action: [
+            GET: "deviceDetails"
+        ]
+    }
+    path("/device/:id/attribute/:name") {
+        action: [
+            GET: "deviceGetAttributeValue"
+        ]
+    }
+    path("/device/:id/command/:name") {
+        action: [
+            POST: "deviceCommand"
+        ]
+    }
 }
 
 preferences {
-  section() {
-    input "devices", "capability.actuator", title: "Devices", multiple: true
-    input "devices", "capability.polling", title: "Devices", multiple: true
-  }
+    section() {
+        input "devices", "capability.actuator", title: "Devices", multiple: true
+        input "devices", "capability.polling", title: "Devices", multiple: true
+    }
 }
 
 def installed() {
-  log.debug "Installed with settings: ${settings}"
-  initialize()
+    log.debug "Installed with settings: ${settings}"
+    initialize()
 }
 
 def updated() {
-  log.debug "Updated with settings: ${settings}"
-  unsubscribe()
-  initialize()
+    log.debug "Updated with settings: ${settings}"
+    unsubscribe()
+    initialize()
 }
 
-def initialize() {
-}
+def initialize() {}
 
 def listDevices() {
-  def resp = []
-  devices.each {
-    log.debug "device: ${it.properties}"
-      
-    def supportedAttributes = []
-  it.supportedAttributes.each {
-    supportedAttributes << it.name
-  }
+    def resp = []
+    devices.each {
+        log.debug "device: ${it.properties}"
 
-  def supportedCommands = []
-  it.supportedCommands.each {
-    def arguments = []
-    it.arguments.each { arg ->
-      arguments << "" + arg
+        def supportedAttributes = []
+        it.supportedAttributes.each {
+            supportedAttributes << it.name
+        }
+
+        def supportedCommands = []
+        it.supportedCommands.each {
+            def arguments = []
+            it.arguments.each {
+                arg - >
+                    arguments << "" + arg
+            }
+            supportedCommands << [
+                name: it.name,
+                arguments: arguments
+            ]
+        }
+
+        resp << [
+            id: it.id,
+            label: it.label,
+            manufacturerName: it.manufacturerName,
+            modelName: it.modelName,
+            name: it.name,
+            displayName: it.displayName,
+            capabilities: supportedAttributes,
+            supportedCommands: supportedCommands
+        ]
     }
-    supportedCommands << [
-        name: it.name,
-        arguments: arguments
-    ]
-  }
-  
-    resp << [
-        id: it.id,
-        label: it.label,
-        manufacturerName: it.manufacturerName,
-        modelName: it.modelName,
-        name: it.name,
-        displayName: it.displayName,
-     	capabilities: supportedAttributes,
-        supportedCommands: supportedCommands
-    ]
-  }
-  return resp
+    return resp
 }
 
 def deviceDetails() {
-  def device = getDeviceById(params.id)
+    def device = getDeviceById(params.id)
 
-  def supportedAttributes = []
-  def state = []
-  device.supportedAttributes.each {
-    supportedAttributes << it.name
-    state << [
-    name: it.name,
-    value: device.currentValue(it.name)]
-  }  
-
-
-  /*def supportedCommands = []
-  device.supportedCommands.each {
-    def arguments = []
-    it.arguments.each { arg ->
-      arguments << "" + arg
+    def supportedAttributes = []
+    def state = []
+    device.supportedAttributes.each {
+        supportedAttributes << it.name
+        state << [
+            name: it.name,
+            value: device.currentValue(it.name)
+        ]
     }
-    supportedCommands << [
-        name: it.name,
-        arguments: arguments
-    ]
-  }*/
 
-  return [
-      id: device.id,
-      label: device.label,
-      manufacturerName: device.manufacturerName,
-      modelName: device.modelName,
-      name: device.name,
-      displayName: device.displayName,
-      supportedAttributes: supportedAttributes,
-      states: state
-      //,supportedCommands: supportedCommands
-  ]
+    return [
+        id: device.id,
+        label: device.label,
+        manufacturerName: device.manufacturerName,
+        modelName: device.modelName,
+        name: device.name,
+        displayName: device.displayName,
+        supportedAttributes: supportedAttributes,
+        states: state
+        //,supportedCommands: supportedCommands
+    ]
 }
 
 def deviceGetAttributeValue() {
-  def device = getDeviceById(params.id)
-  def name = params.name
-  def value = device.currentValue(name);
-  return [
-      value: value
-  ]
+    def device = getDeviceById(params.id)
+    def name = params.name
+    def value = device.currentValue(name);
+    return [
+        value: value
+    ]
 }
 
 def deviceCommand() {
-  def device = getDeviceById(params.id)
-  log.debug "device: ${device}"
-  log.debug "device supported attributes: ${device.supportedAttributes}"
-  log.debug "device supported commands: ${device.supportedCommands}"
+    def device = getDeviceById(params.id)
+    log.debug "device: ${device}"
+    log.debug "device supported attributes: ${device.supportedAttributes}"
+    log.debug "device supported commands: ${device.supportedCommands}"
 
-    
-  def name = params.name
-  
-  if (name == "setLightState") { 
-  	def dimmer = params.dimmer
-  	def hue = params.hue
-  	def saturation = params.saturation
-    
-    if (dimmer != null) {
-    	device.setLevel(dimmer.toInteger())
-        log.debug "device: ${device} Level was set to: ${params.saturation}%"
-    }
-    
-    if (hue != null) {
-    	device.setHue(hue.toInteger())
-        log.debug "device: ${device} hue was set to: ${params.saturation}%"
-    }
-     
-    //log.debug "is saturation supoorted: ${device.hasCapability(saturation)}"    
-    //if (device.hasCapability(saturation)) {
-        if (saturation != null) {
-        	device.setSaturation(saturation.toInteger())
-            log.debug "device: ${device} saturation was set to: ${params.saturation}%"
-        }      
-    //}
-  } else if (name == "setTemperature") {
-  	def temperature = params.temperature
-    log.debug "temperature: ${params.temperature}"
+    def name = params.name
 
-    if (temperature != null) {
-    	device.setHeatingSetpoint(temperature - 2)
-    	device.setCoolingSetpoint(temperature)
-    }
-  } else {
- 	 def args = params.arg
+    if (name == "setLightState") {
+        def dimmer = params.dimmer
+        def hue = params.hue
+        def saturation = params.saturation
+        def isOn = params.state
 
- 	 if (args == null) {
- 	   args = []
- 	 } else if (args instanceof String) {
-  	  args = [args]
-  	 }
-    
-  	log.debug "device command: ${name} ${args}"     
-
-      if (args.size == 0) {
-          device."$name"()
-      } else if (args.size == 1) {
-          if (args[0].isNumber()) {
-           device."$name"(args[0].toInteger())
-        } else {
-           device."$name"(args[0])
+        if (dimmer != null) {
+            device.setLevel(dimmer.toInteger())
+            log.debug "device: ${device} Level was set to: ${params.saturation}%"
         }
-      } else if (args.size == 2) {
-          device."$name"(args[0], args[1])
-      } else {
-          log.debug "Unhandled number of args"
-      }
-  }
+
+        if (hue != null) {
+            device.setHue(hue.toInteger())
+            log.debug "device: ${device} hue was set to: ${params.saturation}%"
+        }
+
+        if (saturation != null) {
+            device.setSaturation(saturation.toInteger())
+            log.debug "device: ${device} saturation was set to: ${params.saturation}%"
+        }
+
+        if (isOn != null) {
+
+            if (isOn == "on") {
+                log.debug "device: ${device} state was set to: ${isOn}"
+                device.on()
+            }
+
+            if (isOn == "off") {
+                log.debug "device: ${device} state was set to: ${isOn}"
+                device.off()
+            }
+        }
+    } else if (name == "setTemperature") {
+        def temperature = params.temperature
+        log.debug "temperature: ${params.temperature}"
+
+        if (temperature != null) {
+            device.setHeatingSetpoint(temperature - 2)
+            device.setCoolingSetpoint(temperature)
+        }
+    } else {
+        def args = params.arg
+
+        if (args == null) {
+            args = []
+        } else if (args instanceof String) {
+            args = [args]
+        }
+
+        log.debug "device command: ${name} ${args}"
+
+        if (args.size == 0) {
+            device.
+            "$name"()
+        } else if (args.size == 1) {
+            if (args[0].isNumber()) {
+                device.
+                "$name"(args[0].toInteger())
+            } else {
+                device.
+                "$name"(args[0])
+            }
+        } else if (args.size == 2) {
+            device.
+            "$name"(args[0], args[1])
+        } else {
+            log.debug "Unhandled number of args"
+        }
+    }
 }
 
 def getDeviceById(id) {
-  return devices.find { it.id == id }
+    return devices.find {
+        it.id == id
+    }
 }
