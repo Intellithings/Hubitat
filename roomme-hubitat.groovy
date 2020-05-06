@@ -86,7 +86,7 @@ def listDevices() {
         it.supportedCommands.each {
             def arguments = []
             it.arguments.each {
-                arg - >
+                arg ->
                     arguments << "" + arg
             }
             supportedCommands << [
