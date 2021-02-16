@@ -54,8 +54,9 @@ mappings {
 
 preferences {
     section() {
-        input "devices", "capability.actuator", title: "Devices", multiple: true
-        input "devices", "capability.polling", title: "Devices", multiple: true
+        input "devices", "capability.actuator", title: "Devices - actuator", multiple: true
+        input "devices", "capability.switch", title: "Devices - switch", multiple: true
+        input "devices", "capability.polling", title: "Devices - polling", multiple: true
     }
 }
 
